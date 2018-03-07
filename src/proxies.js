@@ -232,4 +232,12 @@ function rootObjectProxy(context) {
   return mapProxy(context, '00000000-0000-0000-0000-000000000000')
 }
 
-module.exports = { rootObjectProxy }
+class TrackedMap extends Immutable.Map {
+  
+}
+
+function rootImmutableProxy(context) {
+  new TrackedMap(context, '00000000-0000-0000-0000-000000000000')
+}
+
+module.exports = { rootObjectProxy, rootImmutableProxy }

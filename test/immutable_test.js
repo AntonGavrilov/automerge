@@ -43,3 +43,31 @@ describe('Automerge.initImmutable()', () => {
     }
   })
 })
+
+describe('Immutable write interface', () => {
+  it('throw an error if you return null from a change block', () => {
+    const doc1 = Automerge.initImmutable()
+    assert.throws(() => {
+      const doc2 = Automerge.change(doc1, 'change message', doc =>
+        null
+      )
+    })
+  })
+
+  it('throw an error if you return something incorrect from a change block', () => {
+    const doc1 = Automerge.initImmutable()
+    assert.throws(() => {
+      const doc2 = Automerge.change(doc1, 'change message', doc =>
+        Automerge.initImmutable()
+      )
+    })
+  })
+
+  it('records writes with .set', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, 'change message', doc =>
+      doc.set('first', 'one')
+    )
+    assert.strictEqual(doc2.get('first'), 'one')
+  })
+})

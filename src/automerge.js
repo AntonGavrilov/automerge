@@ -141,8 +141,16 @@ function change(doc, message, callback) {
     [message, callback] = [callback, message]
   }
 
-  const context = {state: doc._state, mutable: true, setField, splice, setListIndex, deleteField}
-  callback(rootObjectProxy(context))
+  // TODO: define / pull in?
+  if isImmutable(doc) {
+    const context = {
+      // TODO
+    }
+    callback(rootImmutableProxy(context)) 
+  } else {
+    const context = {state: doc._state, mutable: true, setField, splice, setListIndex, deleteField}
+    callback(rootObjectProxy(context))
+  }
   return makeChange(doc, context.state, message)
 }
 
