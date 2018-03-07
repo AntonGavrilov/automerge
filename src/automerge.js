@@ -1,6 +1,7 @@
 const { Map, List, fromJS } = require('immutable')
 const uuid = require('uuid/v4')
-const { rootObjectProxy } = require('./proxies')
+const { rootImmutableProxy, rootObjectProxy, TrackedMap } = require('./proxies')
+const { isImmutable } = require('./auto_api')
 const OpSet = require('./op_set')
 const {isObject, checkTarget, makeChange, merge, applyChanges} = require('./auto_api')
 const FreezeAPI = require('./freeze_api')
@@ -142,16 +143,20 @@ function change(doc, message, callback) {
   }
 
   // TODO: define / pull in?
-  if isImmutable(doc) {
-    const context = {
-      // TODO
+  const context = {state: doc._state, mutable: true, setField, splice, setListIndex, deleteField}
+  if (isImmutable(doc)) {
+    let result = callback(rootImmutableProxy(context)) 
+    if (!(result instanceof TrackedMap)) {
+      throw new TypeError('you must return a document from the change block')
     }
-    callback(rootImmutableProxy(context)) 
+    if (result.objectId !== '00000000-0000-0000-0000-000000000000') {
+      throw new TypeError('you must return the document root from the change block')
+    }
+    return makeChange(doc, result.context.state, message)
   } else {
-    const context = {state: doc._state, mutable: true, setField, splice, setListIndex, deleteField}
     callback(rootObjectProxy(context))
+    return makeChange(doc, context.state, message)
   }
-  return makeChange(doc, context.state, message)
 }
 
 function assign(target, values) {

@@ -1,4 +1,4 @@
-const { List, fromJS } = require('immutable')
+const { Map, Set, List, fromJS } = require('immutable')
 const OpSet = require('./op_set')
 
 function listImmutable(attempt) {
@@ -232,12 +232,28 @@ function rootObjectProxy(context) {
   return mapProxy(context, '00000000-0000-0000-0000-000000000000')
 }
 
-class TrackedMap extends Immutable.Map {
-  
+class TrackedMap {
+  constructor(context, objectId, map) {
+    this.map = map || new Map()
+    this.context = context
+    this.objectId = objectId
+  }
+
+  toString() {
+    return "TrackedMap" 
+  }
+
+  set(key,value) {
+    // TODO - dont mutate context pls
+    this.context.state = this.context.setField(this.context.state, this.objectId, key, value)
+    return new TrackedMap(this.context, this.objectId, this.map.set(key,value))
+  }
 }
 
 function rootImmutableProxy(context) {
-  new TrackedMap(context, '00000000-0000-0000-0000-000000000000')
+  let x =  new TrackedMap(context, '00000000-0000-0000-0000-000000000000')
+  debugger;
+  return x
 }
 
-module.exports = { rootObjectProxy, rootImmutableProxy }
+module.exports = { rootObjectProxy, rootImmutableProxy , TrackedMap }

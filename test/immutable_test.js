@@ -3,6 +3,7 @@ const sinon = require('sinon')
 const Immutable = require('immutable')
 const Automerge = require('../src/Automerge')
 
+/*
 describe('Automerge.initImmutable()', () => {
   let beforeDoc, afterDoc, appliedDoc, appliedDoc2, changes
 
@@ -43,6 +44,7 @@ describe('Automerge.initImmutable()', () => {
     }
   })
 })
+*/
 
 describe('Immutable write interface', () => {
   it('throw an error if you return null from a change block', () => {
@@ -51,7 +53,7 @@ describe('Immutable write interface', () => {
       const doc2 = Automerge.change(doc1, 'change message', doc =>
         null
       )
-    })
+    }, /change block/)
   })
 
   it('throw an error if you return something incorrect from a change block', () => {
@@ -60,14 +62,23 @@ describe('Immutable write interface', () => {
       const doc2 = Automerge.change(doc1, 'change message', doc =>
         Automerge.initImmutable()
       )
-    })
+    }, /change block/)
   })
 
   it('records writes with .set', () => {
     const doc1 = Automerge.initImmutable()
-    const doc2 = Automerge.change(doc1, 'change message', doc =>
-      doc.set('first', 'one')
-    )
+    const doc2 = Automerge.change(doc1, 'change message', doc => doc.set('first','one'))
     assert.strictEqual(doc2.get('first'), 'one')
+  })
+
+  it('records chained writes with .set', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, 'change message', doc => { 
+      doc = doc.set('first','one')
+      doc = doc.set('second','two')
+      return doc
+    })
+    assert.strictEqual(doc2.get('first'), 'one')
+    assert.strictEqual(doc2.get('second'), 'two')
   })
 })
