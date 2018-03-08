@@ -237,11 +237,7 @@ class immutableMapProxy {
     this.context = context
     this.objectId = objectId
     this._objectId = objectId
-  }
-
-  // TODO: figure out what to do about these fields
-  _objectId() {
-    return this.objectId
+    // TODO: figure out what to do about these objectId fields
   }
 
   get(key) {
@@ -254,7 +250,6 @@ class immutableMapProxy {
     if (key === '_conflicts') return OpSet.getObjectConflicts(this.context.state.get('opSet'), this.objectId, this.context).toJS()
     if (key === '_change') return this.context
     return OpSet.getObjectField(this.context.state.get('opSet'), this.objectId, key, this.context)
-    // return this.map
   }
 
   set(key, value) {
