@@ -232,28 +232,70 @@ function rootObjectProxy(context) {
   return mapProxy(context, '00000000-0000-0000-0000-000000000000')
 }
 
-class TrackedMap {
-  constructor(context, objectId, map) {
-    this.map = map || new Map()
+class immutableMapProxy {
+  constructor(context, objectId) {
     this.context = context
     this.objectId = objectId
+    this._objectId = objectId
   }
 
-  toString() {
-    return "TrackedMap" 
+  // TODO: figure out what to do about these fields
+  _objectId() {
+    return this.objectId
   }
 
-  set(key,value) {
-    // TODO - dont mutate context pls
-    this.context.state = this.context.setField(this.context.state, this.objectId, key, value)
-    return new TrackedMap(this.context, this.objectId, this.map.set(key,value))
+  get(key) {
+    //if (!context.state.hasIn(['opSet', 'byObject', objectId])) throw 'Target object does not exist: ' + objectId
+    if (key === '_inspect') return 'inspecting an immutableMapProxy' // JSON.parse(JSON.stringify(mapProxy(context, objectId)))
+    if (key === '_type') return 'map'
+    if (key === '_objectId') return this.objectId
+    if (key === '_state') return this.context.state
+    if (key === '_actorId') return this.context.state.get('actorId')
+    if (key === '_conflicts') return OpSet.getObjectConflicts(this.context.state.get('opSet'), this.objectId, this.context).toJS()
+    if (key === '_change') return this.context
+    return OpSet.getObjectField(this.context.state.get('opSet'), this.objectId, key, this.context)
+    // return this.map
   }
+
+  set(key, value) {
+    if (!this.context.mutable) {
+      throw new TypeError('Not in change block!')
+    }
+    const newContext = Object.assign({}, this.context, {
+      state: this.context.setField(this.context.state, this.objectId, key, value)
+    })
+    return new immutableMapProxy(newContext, this.objectId)
+  }
+
+  delete(key) {
+    if (!this.context.mutable) {
+      throw new TypeError('Not in change block!')
+    }
+    const newContext = Object.assign({}, this.context, {
+      state: this.context.deleteField(this.context.state, this.objectId, key)
+    })
+    return new immutableMapProxy(newContext, this.objectId)
+  }
+}
+
+function instantiateImmutableProxy(opSet, objectId) {
+  const objectType = opSet.getIn(['byObject', objectId, '_init', 'action'])
+  if (objectType === 'makeMap') {
+    return new immutableMapProxy(this, objectId)
+  } else {
+    throw 'Unknown object type: ' + objectType
+  }
+}
+
+function isImmutableProxy(object) {
+  return (object instanceof immutableMapProxy)
 }
 
 function rootImmutableProxy(context) {
-  let x =  new TrackedMap(context, '00000000-0000-0000-0000-000000000000')
-  debugger;
-  return x
+  const newContext = Object.assign({}, context, {
+    instantiateObject: instantiateImmutableProxy
+  })
+  return new immutableMapProxy(newContext, '00000000-0000-0000-0000-000000000000')
 }
 
-module.exports = { rootObjectProxy, rootImmutableProxy , TrackedMap }
+module.exports = { rootObjectProxy, rootImmutableProxy, isImmutableProxy }

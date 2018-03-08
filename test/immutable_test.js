@@ -1,6 +1,6 @@
 const assert = require('assert')
 const sinon = require('sinon')
-const Immutable = require('immutable')
+const { Map, is } = require('immutable')
 const Automerge = require('../src/Automerge')
 
 /*
@@ -46,39 +46,142 @@ describe('Automerge.initImmutable()', () => {
 })
 */
 
+// TODO: reject non-immutable inputs??
+
 describe('Immutable write interface', () => {
-  it('throw an error if you return null from a change block', () => {
+  it('throws an error if you return nothing from a change block', () => {
     const doc1 = Automerge.initImmutable()
     assert.throws(() => {
-      const doc2 = Automerge.change(doc1, 'change message', doc =>
-        null
-      )
-    }, /change block/)
+      const doc2 = Automerge.change(doc1, doc => {})
+    }, /return a document from the change block/)
   })
 
-  it('throw an error if you return something incorrect from a change block', () => {
+  it('throws an error if you return a non-document value from a change block', () => {
     const doc1 = Automerge.initImmutable()
     assert.throws(() => {
-      const doc2 = Automerge.change(doc1, 'change message', doc =>
-        Automerge.initImmutable()
-      )
-    }, /change block/)
+      const doc2 = Automerge.change(doc1, doc => 42)
+    }, /return a document from the change block/)
+  })
+
+  it('throws an error if you return a non-root object from a change block', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      return doc.set('outer', new Map())
+    })
+    assert.throws(() => {
+      const doc3 = Automerge.change(doc2, doc => {
+        return doc.get('outer')
+      })
+    }, /new document root from the change block/)
   })
 
   it('records writes with .set', () => {
     const doc1 = Automerge.initImmutable()
-    const doc2 = Automerge.change(doc1, 'change message', doc => doc.set('first','one'))
+    const doc2 = Automerge.change(doc1, doc => {
+      return doc.set('first','one')
+    })
     assert.strictEqual(doc2.get('first'), 'one')
   })
 
-  it('records chained writes with .set', () => {
+  it('records multiple writes with .set', () => {
     const doc1 = Automerge.initImmutable()
-    const doc2 = Automerge.change(doc1, 'change message', doc => { 
+    const doc2 = Automerge.change(doc1, doc => {
       doc = doc.set('first','one')
       doc = doc.set('second','two')
       return doc
     })
     assert.strictEqual(doc2.get('first'), 'one')
     assert.strictEqual(doc2.get('second'), 'two')
+  })
+
+  it('records writes of an empty map with .set', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      doc = doc.set('outer', new Map())
+      return doc
+    })
+    const docTest = doc2.get('outer').delete('_objectId')
+    assert.strictEqual(docTest, new Map())
+  })
+
+  it('records nested writes with .set', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      doc = doc.set('outer', new Map())
+      doc = doc.set('outer', doc.get('outer').set('inner', 'bar'))
+      return doc
+    })
+    assert.strictEqual(doc2.get('outer').get('inner'), 'bar')
+  })
+
+  it('records overwrites with .set', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      doc = doc.set('first','foo')
+      doc = doc.set('first','bar')
+      return doc
+    })
+    assert.strictEqual(doc2.get('first'), 'bar')
+  })
+
+  it('records deletes of values with .delete', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      doc = doc.set('first','one')
+      doc = doc.set('second','two')
+      return doc
+    })
+    const doc3 = Automerge.change(doc2, doc => {
+      return doc.delete('second')
+    })
+    assert.strictEqual(doc3.get('first'), 'one')
+    assert.strictEqual(doc3.get('second'), undefined)
+  })
+
+  it('records deletes of maps with .delete', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      doc = doc.set('outer', new Map())
+      doc = doc.set('outer', doc.get('outer').set('inner', 'bar'))
+      return doc
+    })
+    const doc3 = Automerge.change(doc2, doc => {
+      return doc.delete('outer')
+    })
+    assert.strictEqual(doc3.get('outer'), undefined)
+  })
+
+  it('preserves history of value .sets and .deletes', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      doc = doc.set('first', 'one')
+      doc = doc.set('register', 1)
+      return doc
+    })
+    const doc3 = Automerge.change(doc2, doc => {
+      doc = doc.set('second', 'two')
+      doc = doc.set('register', 2)
+      return doc
+    })
+    const doc4 = Automerge.change(doc3, doc => {
+      doc = doc.delete('first')
+      return doc
+    })
+
+    assert.strictEqual(doc2.get('first'), 'one')
+    assert.strictEqual(doc2.get('second'), undefined)
+    assert.strictEqual(doc2.get('register'), 1)
+
+    assert.strictEqual(doc3.get('first'), 'one')
+    assert.strictEqual(doc3.get('second'), 'two')
+    assert.strictEqual(doc3.get('register'), 2)
+
+    assert.strictEqual(doc4.get('first'), undefined)
+    assert.strictEqual(doc4.get('second'), 'two')
+    assert.strictEqual(doc4.get('register'), 2)
+  })
+
+  it('preserves history of map .sets and .deletes', () => {
+    // TODO
   })
 })
