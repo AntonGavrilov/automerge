@@ -1,7 +1,8 @@
 const assert = require('assert')
-const sinon = require('sinon')
-const { Map, is } = require('immutable')
+const { Map, Set, List, is } = require('immutable')
 const Automerge = require('../src/Automerge')
+
+const ROOT_ID = '00000000-0000-0000-0000-000000000000'
 
 /*
 describe('Automerge.initImmutable()', () => {
@@ -46,9 +47,32 @@ describe('Automerge.initImmutable()', () => {
 })
 */
 
-// TODO: reject non-immutable inputs??
 
 describe('Immutable write interface', () => {
+  // TODO: correct public API?
+  it('should have a fixed object ID at the root', () => {
+    Automerge.change(Automerge.initImmutable(), doc => {
+      assert.strictEqual(doc._objectId, ROOT_ID)
+      return doc
+    })
+  })
+
+  // TODO: do we actually need this within changes?
+  // it('should know its actor ID', () => {
+  //   Automerge.change(Automerge.initImmutable(), doc => {
+  //     debugger
+  //     assert(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(doc._actorId))
+  //     assert.notEqual(doc._actorId, ROOT_ID)
+  //     assert.strictEqual(Automerge.init('customActorId')._actorId, 'customActorId')
+  //     return doc
+  //   })
+  // })
+
+  it('should accept a no-op block', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => doc)
+  })
+
   it('throws an error if you return nothing from a change block', () => {
     const doc1 = Automerge.initImmutable()
     assert.throws(() => {
@@ -56,10 +80,32 @@ describe('Immutable write interface', () => {
     }, /return a document from the change block/)
   })
 
-  it('throws an error if you return a non-document value from a change block', () => {
+  it('throws an error if you return a scalar value a change block', () => {
     const doc1 = Automerge.initImmutable()
     assert.throws(() => {
       const doc2 = Automerge.change(doc1, doc => 42)
+    }, /return a document from the change block/)
+  })
+
+
+  it('throws an error if you return a mutable map from a change block', () => {
+    const doc1 = Automerge.initImmutable()
+    assert.throws(() => {
+      const doc2 = Automerge.change(doc1, doc => { return {foo: 'bar'} })
+    }, /return a document from the change block/)
+  })
+
+  it('throws if you return a mutable array from a change block', () => {
+    const doc1 = Automerge.initImmutable()
+    assert.throws(() => {
+      const doc2 = Automerge.change(doc1, doc => { return ['foo', 'bar'] })
+    }, /return a document from the change block/)
+  })
+
+  it('throws if you return an immutable set from a change block', () => {
+    const doc1 = Automerge.initImmutable()
+    assert.throws(() => {
+      const doc2 = Automerge.change(doc1, doc => { return new Set('foo', 'bar') })
     }, /return a document from the change block/)
   })
 
@@ -181,7 +227,37 @@ describe('Immutable write interface', () => {
     assert.strictEqual(doc4.get('register'), 2)
   })
 
-  it('preserves history of map .sets and .deletes', () => {
-    // TODO
-  })
+  // TODO: implement when nested maps work
+  // it('preserves history of map .sets and .deletes', () => {
+  // })
+
+  // TODO: figure out implementation and testing of other read APIs like .keys() and .keySeq()
+  // it('something something other methods', () => {
+  // })
+
+  // TODO: figure out how to do in context of other collection methods
+  // it('supports JSON.stringify()', () => {
+  //   Automerge.change(Automerge.initImmutable(), doc => {
+  //     assert.deepEqual(JSON.stringify(doc), '{"_objectId":"00000000-0000-0000-0000-000000000000"}')
+  //     doc = doc.set('key1', 'value1')
+  //     equalsOneOf(JSON.stringify(doc),
+  //       '{"_objectId":"00000000-0000-0000-0000-000000000000","key1":"value1"}',
+  //       '{"key1":"value1","_objectId":"00000000-0000-0000-0000-000000000000"}')
+  //     doc = doc.set('key2', 'value2')
+  //     assert.deepEqual(JSON.parse(JSON.stringify(doc)), {
+  //       _objectId: ROOT_ID, key1: 'value1', key2: 'value2'
+  //     })
+  //   })
+  // })
+  //
+  // it('supports JSON.stringify() on nested values', () => {
+  //   const doc1 = Automerge.initImmutable()
+  //   Automerge.change(doc1, doc => {
+  //     doc = doc.set('out', new Map())
+  //     doc = doc.setIn('out', 'in', 3)
+  //     equalsOneOf(JSON.stringify(doc),
+  //       '{"_objectId":"00000000-0000-0000-0000-000000000000","out":{"in":3}}',
+  //       '{"out":{"in":3},"_objectId":"00000000-0000-0000-0000-000000000000"}')
+  //   })
+  // })
 })
