@@ -240,6 +240,10 @@ class immutableMapProxy {
     // TODO: figure out what to do about these objectId fields
   }
 
+  isRoot() {
+    return (this.objectId === '00000000-0000-0000-0000-000000000000')
+  }
+
   get(key) {
     //if (!context.state.hasIn(['opSet', 'byObject', objectId])) throw 'Target object does not exist: ' + objectId
     if (key === '_inspect') return 'inspecting an immutableMapProxy' // JSON.parse(JSON.stringify(mapProxy(context, objectId)))
@@ -256,9 +260,41 @@ class immutableMapProxy {
     if (!this.context.mutable) {
       throw new TypeError('Not in change block!')
     }
+    if (!this.isRoot()) {
+      throw new TypeError('Can only set or setIn from root doc')
+    }
     const newContext = Object.assign({}, this.context, {
       state: this.context.setField(this.context.state, this.objectId, key, value)
     })
+    return new immutableMapProxy(newContext, this.objectId)
+  }
+
+  // TODO: create empty maps, and test
+  setIn(keys, value) {
+    if (!this.context.mutable) {
+      throw new TypeError('Not in change block!')
+    }
+    if (!this.isRoot()) {
+      throw new TypeError('Can only set or setIn from root doc')
+    }
+    if (keys.length === 0) {
+      throw new TypeError('Must have at least one key to setIn')
+    }
+    let keyedObjects = []
+    keyedObjects[0] = this
+    for (let i=1; i<keys.length; keys++) {
+      keyedObjects[i] = keyedObjects[i-1].get(keys[i])
+    }
+    let newValue = value
+    let newContext = this.context
+    for (let i=keys.length-1; i>=0; i--) {
+      newContext = Object.assign({}, newContext, {
+        state: newContext.setField(newContext.state, keyedObjects[i].objectId, keys[i], newValue)
+      })
+      if (i !== 0) {
+        newValue = OpSet.getObjectField(newContext.state.get('opSet'), keyedObjects[i].objectId, keys[i], newContext)
+      }
+    }
     return new immutableMapProxy(newContext, this.objectId)
   }
 

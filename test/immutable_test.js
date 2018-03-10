@@ -143,22 +143,50 @@ describe('Immutable write interface', () => {
   it('records writes of an empty map with .set', () => {
     const doc1 = Automerge.initImmutable()
     const doc2 = Automerge.change(doc1, doc => {
-      doc = doc.set('outer', new Map())
-      return doc
+      return doc.set('outer', new Map())
     })
     const docTest = doc2.get('outer').delete('_objectId')
     assert.strictEqual(docTest, new Map())
   })
 
-  it('records nested writes with .set', () => {
+  it('raises and error on .setIn with no keys', () => {
+    const doc1 = Automerge.initImmutable()
+    assert.throws(() => {
+      const doc2 = Automerge.change(doc1, doc => {
+        return doc.setIn([], 'foo')
+      })
+    }, /at least one key to setIn/)
+  })
+
+  it('records un-nested writes with .setIn', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      return doc.setIn(['first'],'one')
+    })
+    assert.strictEqual(doc2.get('first'), 'one')
+  })
+
+  it('records nested writes with .setIn', () => {
     const doc1 = Automerge.initImmutable()
     const doc2 = Automerge.change(doc1, doc => {
       doc = doc.set('outer', new Map())
-      doc = doc.set('outer', doc.get('outer').set('inner', 'bar'))
+      doc = doc.setIn(['outer', 'inner'], 'bar')
       return doc
     })
     assert.strictEqual(doc2.get('outer').get('inner'), 'bar')
   })
+
+  it('records nested writes with implicit new maps with .setIn', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      doc = doc.set('outer', new Map())
+      doc = doc.setIn(['outer', 'middle', 'inner'], 'bar')
+      return doc
+    })
+    assert.strictEqual(doc2.get('outer').get('middle').get('inner'), 'bar')
+  })
+
+  // TODO: can't .set or delete on non-root documents
 
   it('records overwrites with .set', () => {
     const doc1 = Automerge.initImmutable()
@@ -188,7 +216,7 @@ describe('Immutable write interface', () => {
     const doc1 = Automerge.initImmutable()
     const doc2 = Automerge.change(doc1, doc => {
       doc = doc.set('outer', new Map())
-      doc = doc.set('outer', doc.get('outer').set('inner', 'bar'))
+      doc = doc.setIn(['outer', 'inner'], 'foo')
       return doc
     })
     const doc3 = Automerge.change(doc2, doc => {
@@ -254,7 +282,7 @@ describe('Immutable write interface', () => {
   //   const doc1 = Automerge.initImmutable()
   //   Automerge.change(doc1, doc => {
   //     doc = doc.set('out', new Map())
-  //     doc = doc.setIn('out', 'in', 3)
+  //     doc = doc.setIn(['out', 'in'], 3)
   //     equalsOneOf(JSON.stringify(doc),
   //       '{"_objectId":"00000000-0000-0000-0000-000000000000","out":{"in":3}}',
   //       '{"out":{"in":3},"_objectId":"00000000-0000-0000-0000-000000000000"}')
