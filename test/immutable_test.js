@@ -301,9 +301,17 @@ describe('Immutable write interface', () => {
     assert.strictEqual(doc4.get('register'), 2)
   })
 
-  // TODO: implement when nested maps work
-  // it('preserves history of map .sets and .deletes', () => {
-  // })
+  it('preserves history of map .sets and .deletes', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      return doc.set('outer', new Map().set('inner', 'foo'))
+    })
+    const doc3 = Automerge.change(doc2, doc => {
+      return doc.delete('outer')
+    })
+    assert.strictEqual(doc2.get('outer').get('inner'), 'foo')
+    assert.strictEqual(doc3.get('outer'), undefined)
+  })
 
   // TODO: figure out implementation and testing of other read APIs like .keys() and .keySeq()
   // it('something something other methods', () => {
