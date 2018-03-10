@@ -319,6 +319,33 @@ class immutableMapProxy {
     })
     return new immutableMapProxy(newContext, this._objectId)
   }
+
+  deleteIn(keys) {
+    if (!this.context.mutable) {
+      throw new TypeError('Not in change block!')
+    }
+    if (!this.isRoot()) {
+      throw new TypeError('Can only delete or deleteIN from root doc')
+    }
+    if (keys.length === 0) {
+      throw new TypeError('Must have at least one key to deleteIn')
+    }
+    let keyedObj = this
+    for (let i=1; i<keys.length; i++) {
+      keyedObj = keyedObj.get(keys[i-1])
+      if (!keyedObj) {
+        return this
+      }
+    }
+    const innerKey = keys[keys.length-1]
+    if (!keyedObj.get(innerKey)) {
+      return this
+    }
+    const newContext = Object.assign({}, this.context, {
+      state: this.context.deleteField(this.context.state, keyedObj._objectId, innerKey)
+    })
+    return new immutableMapProxy(newContext, this._objectId)
+  }
 }
 
 function instantiateImmutableProxy(opSet, objectId) {

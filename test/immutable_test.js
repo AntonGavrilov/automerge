@@ -269,6 +269,44 @@ describe('Immutable write interface', () => {
   })
 
 
+  //// .deleteIn
+
+  it('does not make changes if any keys are missing', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      return doc.setIn(['outer', 'inner'], 'foo')
+    })
+    const doc3 = Automerge.change(doc2, doc => {
+      return doc.deleteIn(['outer', 'wat'])
+    })
+    assert.strictEqual(doc3.get('outer').get('inner'), 'foo')
+    assert.strictEqual(doc3.get('outer').get('wat'), undefined)
+  })
+
+  it('deletes nested values', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      return doc.setIn(['outer', 'inner'], 'foo')
+    })
+    const doc3 = Automerge.change(doc2, doc => {
+      return doc.deleteIn(['outer', 'inner'])
+    })
+    assert.strictEqual(doc3.get('outer').get('inner'), undefined)
+    assert.strictEqual(!!doc3.get('outer'), true)
+  })
+
+  it('deletes un-nested values', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      return doc.setIn(['outer', 'inner'], 'foo')
+    })
+    const doc3 = Automerge.change(doc2, doc => {
+      return doc.deleteIn(['outer'])
+    })
+    assert.strictEqual(doc3.get('outer'), undefined)
+  })
+
+
   //// history
 
   it('preserves history of value .sets and .deletes', () => {
