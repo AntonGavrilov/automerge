@@ -244,15 +244,8 @@ class immutableMapProxy {
   }
 
   get(key) {
-    // TODO: do we really need all of these?
-    // TODO: may want to move to properties
-    //if (!context.state.hasIn(['opSet', 'byObject', objectId])) throw 'Target object does not exist: ' + objectId
-    // if (key === '_inspect') return JSON.parse(JSON.stringify(mapProxy(context, objectId)))
-    // if (key === '_type') return 'map'
-    // if (key === '_state') return this.context.state
-    // if (key === '_actorId') return this.context.state.get('actorId')
-    // if (key === '_conflicts') return OpSet.getObjectConflicts(this.context.state.get('opSet'), this._objectId, this.context).toJS()
-    // if (key === '_change') return this.context
+    // TODO: do we need/want: _inspect, _type, _state, _actorId, _conflicts, _change,
+    // here and/or in properties?
     return OpSet.getObjectField(this.context.state.get('opSet'), this._objectId, key, this.context)
   }
 
@@ -285,34 +278,46 @@ class immutableMapProxy {
     if (keys.length === 0) {
       throw new TypeError('Must have at least one key to setIn')
     }
-    let keyedObjects = []
-    keyedObjects[0] = this
+
+    let keyedObject = this
     for (let i=1; i<keys.length; i++) {
-      const keyedObject = keyedObjects[i-1].get(keys[i-1])
+      keyedObject = keyedObject.get(keys[i-1])
+      // If we're missing any maps in the chain, we need to create them.
+      // To do that, we'll first form the new maps as standard immutable and
+      // then setIn that new, larger, value with the smaller, existing array
+      // of keys as the path.
       if (!keyedObject) {
-        const keysWithoutObjects = keys.slice(i)
         const keysWithObjects = keys.slice(0, i)
+        const keysWithoutObjects = keys.slice(i)
         let newValue = value
         for (let j=keysWithoutObjects.length-1; j>=0; j--) {
           newValue = new Map().set(keysWithoutObjects[j], newValue)
         }
         return this.setIn(keysWithObjects, newValue)
-      } else {
-        keyedObjects[i] = keyedObject
       }
     }
-    let newValue = value
-    let newContext = this.context
-    for (let i=keys.length-1; i>=0; i--) {
-      newContext = newContext.update('state', (s) => {
-        return setField(s, keyedObjects[i]._objectId, keys[i], newValue)
-      })
-      if (i !== 0) {
-        // TODO: I think we should be able to avoid materializing here.
-        newValue = OpSet.getObjectField(newContext.state.get('opSet'), keyedObjects[i-1]._objectId, keys[i-1], newContext)
-      }
-    }
+    const newContext = this.context.update('state', (s) => {
+      return setField(s, keyedObject._objectId, keys[keys.length-1], value)
+    })
     return new immutableMapProxy(newContext, this._objectId)
+
+    // TODO: do we need to do sets up to the root as below, or does
+    // one setField do it? Unclear what semantics are if one side is
+    // using mutable API and the other immutable API! If we do need
+    // to write to root, may be able to avoid materialization in the
+    // code below.
+    //
+    // let newValue = value
+    // let newContext = this.context
+    // for (let i=keys.length-1; i>=0; i--) {
+    //   newContext = newContext.update('state', (s) => {
+    //     return setField(s, keyedObjects[i]._objectId, keys[i], newValue)
+    //   })
+    //   if (i !== 0) {
+    //     newValue = OpSet.getObjectField(newContext.state.get('opSet'), keyedObjects[i-1]._objectId, keys[i-1], newContext)
+    //   }
+    // }
+    // return new immutableMapProxy(newContext, this._objectId)
   }
 
   delete(key) {
