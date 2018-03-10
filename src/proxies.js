@@ -247,12 +247,12 @@ class immutableMapProxy {
     // TODO: do we really need all of these?
     // TODO: may want to move to properties
     //if (!context.state.hasIn(['opSet', 'byObject', objectId])) throw 'Target object does not exist: ' + objectId
-    if (key === '_inspect') return 'inspecting an immutableMapProxy' // JSON.parse(JSON.stringify(mapProxy(context, objectId)))
-    if (key === '_type') return 'map'
-    if (key === '_state') return this.context.state
-    if (key === '_actorId') return this.context.state.get('actorId')
-    if (key === '_conflicts') return OpSet.getObjectConflicts(this.context.state.get('opSet'), this._objectId, this.context).toJS()
-    if (key === '_change') return this.context
+    // if (key === '_inspect') return JSON.parse(JSON.stringify(mapProxy(context, objectId)))
+    // if (key === '_type') return 'map'
+    // if (key === '_state') return this.context.state
+    // if (key === '_actorId') return this.context.state.get('actorId')
+    // if (key === '_conflicts') return OpSet.getObjectConflicts(this.context.state.get('opSet'), this._objectId, this.context).toJS()
+    // if (key === '_change') return this.context
     return OpSet.getObjectField(this.context.state.get('opSet'), this._objectId, key, this.context)
   }
 
