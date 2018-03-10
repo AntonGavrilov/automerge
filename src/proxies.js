@@ -257,10 +257,10 @@ class immutableMapProxy {
 
   set(key, value) {
     if (!this.context.mutable) {
-      throw new TypeError('Not in change block!')
+      throw new TypeError('Must be in change block to set')
     }
     if (!this.isRoot()) {
-      throw new TypeError('Can only set or setIn from root doc')
+      throw new TypeError('Must set only from root doc')
     }
     const newContext = this.context.update('state', (s) => {
       return this.context.setField(s, this._objectId, key, value)
@@ -270,10 +270,10 @@ class immutableMapProxy {
 
   setIn(keys, value) {
     if (!this.context.mutable) {
-      throw new TypeError('Not in change block!')
+      throw new TypeError('Must be in change block to setIn')
     }
     if (!this.isRoot()) {
-      throw new TypeError('Can only set or setIn from root doc')
+      throw new TypeError('Must setIn only from root doc')
     }
     if (keys.length === 0) {
       throw new TypeError('Must have at least one key to setIn')
@@ -309,10 +309,10 @@ class immutableMapProxy {
 
   delete(key) {
     if (!this.context.mutable) {
-      throw new TypeError('Not in change block!')
+      throw new TypeError('Must be in change block to delete')
     }
     if (!this.isRoot()) {
-      throw new TypeError('Can only delete or deleteIn from root doc')
+      throw new TypeError('Must delete only from root doc')
     }
     const newContext = this.context.update('state', (s) => {
       return this.context.deleteField(s, this._objectId, key)
@@ -322,10 +322,10 @@ class immutableMapProxy {
 
   deleteIn(keys) {
     if (!this.context.mutable) {
-      throw new TypeError('Not in change block!')
+      throw new TypeError('Must be in change block to deleteIn')
     }
     if (!this.isRoot()) {
-      throw new TypeError('Can only delete or deleteIN from root doc')
+      throw new TypeError('Must deleteIn only from root doc')
     }
     if (keys.length === 0) {
       throw new TypeError('Must have at least one key to deleteIn')

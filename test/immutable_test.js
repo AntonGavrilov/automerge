@@ -137,7 +137,7 @@ describe('Immutable write interface', () => {
         doc = doc.set('outer', newOuter)
         return doc
       })
-    }, /only set or setIn from root doc/)
+    }, /set only from root doc/)
   })
 
   it('records writes with .set', () => {
@@ -238,7 +238,7 @@ describe('Immutable write interface', () => {
       const doc3 = Automerge.change(doc2, doc => {
         return doc.get('outer').delete('inner')
       })
-    }, /only delete or deleteIn from root doc/)
+    }, /delete only from root doc/)
   })
 
   it('records deletes of values with .delete', () => {
