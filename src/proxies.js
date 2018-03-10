@@ -1,5 +1,6 @@
 const { Map, Set, List, Record, fromJS } = require('immutable')
 const OpSet = require('./op_set')
+const { setField } = require ('./state')
 
 function listImmutable(attempt) {
   throw new TypeError('You tried to ' + attempt + ', but this list is read-only. ' +
@@ -260,7 +261,7 @@ class immutableMapProxy {
       throw new TypeError('Must set only from root doc')
     }
     const newContext = this.context.update('state', (s) => {
-      return this.context.setField(s, this._objectId, key, value)
+      return setField(s, this._objectId, key, value)
     })
     return new immutableMapProxy(newContext, this._objectId)
   }
@@ -292,7 +293,7 @@ class immutableMapProxy {
     let newContext = this.context
     for (let i=keys.length-1; i>=0; i--) {
       newContext = newContext.update('state', (s) => {
-        return newContext.setField(s, keyedObjects[i]._objectId, keys[i], newValue)
+        return setField(s, keyedObjects[i]._objectId, keys[i], newValue)
       })
       if (i !== 0) {
         newValue = OpSet.getObjectField(newContext.state.get('opSet'), keyedObjects[i-1]._objectId, keys[i-1], newContext)
@@ -358,7 +359,6 @@ const ImmutableContext = Record({
   state: undefined,
   mutable: undefined,
   instantiateObject: undefined,
-  setField: undefined,
   deleteField: undefined
   //splice: undefined,
   //setListIndex: undefined,
