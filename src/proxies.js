@@ -256,6 +256,18 @@ class immutableMapProxy {
     return OpSet.getObjectField(this.context.state.get('opSet'), this._objectId, key, this.context)
   }
 
+  getIn(keys) {
+    if (keys.length === 0) {
+      throw new TypeError('Must have at least one key to getIn')
+    }
+    let obj = this
+    for (let key of keys) {
+      obj = obj.get(key)
+      if (obj === undefined) break
+    }
+    return obj
+  }
+
   set(key, value) {
     if (!this.isRoot()) {
       throw new TypeError('Must set only from root doc')

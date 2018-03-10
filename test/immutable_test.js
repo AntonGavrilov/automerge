@@ -80,6 +80,27 @@ describe('Immutable write interface', () => {
   })
 
 
+  //// .getIn
+
+  it('returns from nested maps with .getIn', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      doc = doc.setIn(['outer', 'inner'], 'foo')
+      assert.strictEqual(doc.getIn(['outer', 'inner']), 'foo')
+      return doc
+    })
+  })
+
+  it('returns undefined if a map is missing', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      doc = doc.set('outer', new Map())
+      assert.strictEqual(doc.getIn(['outer', 'inner', 'leaf']), undefined)
+      return doc
+    })
+  })
+
+
   //// .set
 
   it('throws when trying to .set on non-root doc', () => {
