@@ -256,9 +256,6 @@ class immutableMapProxy {
   }
 
   set(key, value) {
-    if (!this.context.mutable) {
-      throw new TypeError('Must be in change block to set')
-    }
     if (!this.isRoot()) {
       throw new TypeError('Must set only from root doc')
     }
@@ -269,9 +266,6 @@ class immutableMapProxy {
   }
 
   setIn(keys, value) {
-    if (!this.context.mutable) {
-      throw new TypeError('Must be in change block to setIn')
-    }
     if (!this.isRoot()) {
       throw new TypeError('Must setIn only from root doc')
     }
@@ -308,9 +302,6 @@ class immutableMapProxy {
   }
 
   delete(key) {
-    if (!this.context.mutable) {
-      throw new TypeError('Must be in change block to delete')
-    }
     if (!this.isRoot()) {
       throw new TypeError('Must delete only from root doc')
     }
@@ -321,9 +312,6 @@ class immutableMapProxy {
   }
 
   deleteIn(keys) {
-    if (!this.context.mutable) {
-      throw new TypeError('Must be in change block to deleteIn')
-    }
     if (!this.isRoot()) {
       throw new TypeError('Must deleteIn only from root doc')
     }
