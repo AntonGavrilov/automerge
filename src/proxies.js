@@ -1,6 +1,6 @@
 const { Map, Set, List, Record, fromJS } = require('immutable')
 const OpSet = require('./op_set')
-const { setField, deleteField } = require ('./state')
+const { setField, deleteField } = require('./state')
 
 function listImmutable(attempt) {
   throw new TypeError('You tried to ' + attempt + ', but this list is read-only. ' +
