@@ -1,6 +1,6 @@
 const { Map, List, fromJS } = require('immutable')
 const uuid = require('uuid/v4')
-const { rootObjectProxy, rootImmutableProxy, isImmutableProxy } = require('./proxies')
+const { rootObjectProxy, rootImmutableProxy, isImmutableProxy, ImmutableContext } = require('./proxies')
 const { isImmutable } = require('./auto_api')
 const OpSet = require('./op_set')
 const {isObject, checkTarget, makeChange, merge, applyChanges} = require('./auto_api')
@@ -148,7 +148,14 @@ function change(doc, message, callback) {
   }
 
   if (isImmutable(doc)) {
-    const context = {state: doc._state, mutable: true, setField, splice, setListIndex, deleteField}
+    const context = ImmutableContext({
+      state: doc._state,
+      mutable: true,
+      setField,
+      deleteField,
+      //splice
+      //setListIndex
+    })
     const result = callback(rootImmutableProxy(context))
     if (!isImmutableProxy(result)) {
       throw new TypeError('you must return a document from the change block')

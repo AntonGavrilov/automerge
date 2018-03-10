@@ -1,4 +1,4 @@
-const { Map, Set, List, fromJS } = require('immutable')
+const { Map, Set, List, Record, fromJS } = require('immutable')
 const OpSet = require('./op_set')
 
 function listImmutable(attempt) {
@@ -262,8 +262,8 @@ class immutableMapProxy {
     if (!this.isRoot()) {
       throw new TypeError('Can only set or setIn from root doc')
     }
-    const newContext = Object.assign({}, this.context, {
-      state: this.context.setField(this.context.state, this._objectId, key, value)
+    const newContext = this.context.update('state', (s) => {
+      return this.context.setField(s, this._objectId, key, value)
     })
     return new immutableMapProxy(newContext, this._objectId)
   }
@@ -297,8 +297,8 @@ class immutableMapProxy {
     let newValue = value
     let newContext = this.context
     for (let i=keys.length-1; i>=0; i--) {
-      newContext = Object.assign({}, newContext, {
-        state: newContext.setField(newContext.state, keyedObjects[i]._objectId, keys[i], newValue)
+      newContext = newContext.update('state', (s) => {
+        return newContext.setField(s, keyedObjects[i]._objectId, keys[i], newValue)
       })
       if (i !== 0) {
         newValue = OpSet.getObjectField(newContext.state.get('opSet'), keyedObjects[i-1]._objectId, keys[i-1], newContext)
@@ -314,8 +314,8 @@ class immutableMapProxy {
     if (!this.isRoot()) {
       throw new TypeError('Can only delete or deleteIn from root doc')
     }
-    const newContext = Object.assign({}, this.context, {
-      state: this.context.deleteField(this.context.state, this._objectId, key)
+    const newContext = this.context.update('state', (s) => {
+      return this.context.deleteField(s, this._objectId, key)
     })
     return new immutableMapProxy(newContext, this._objectId)
   }
@@ -341,8 +341,8 @@ class immutableMapProxy {
     if (!keyedObj.get(innerKey)) {
       return this
     }
-    const newContext = Object.assign({}, this.context, {
-      state: this.context.deleteField(this.context.state, keyedObj._objectId, innerKey)
+    const newContext = this.context.update('state', (s) => {
+      return this.context.deleteField(s, keyedObj._objectId, innerKey)
     })
     return new immutableMapProxy(newContext, this._objectId)
   }
@@ -362,10 +362,18 @@ function isImmutableProxy(object) {
 }
 
 function rootImmutableProxy(context) {
-  const newContext = Object.assign({}, context, {
-    instantiateObject: instantiateImmutableProxy
-  })
+  const newContext = context.set('instantiateObject', instantiateImmutableProxy)
   return new immutableMapProxy(newContext, '00000000-0000-0000-0000-000000000000')
 }
 
-module.exports = { rootObjectProxy, rootImmutableProxy, isImmutableProxy }
+const ImmutableContext = Record({
+  state: undefined,
+  mutable: undefined,
+  instantiateObject: undefined,
+  setField: undefined,
+  deleteField: undefined
+  //splice: undefined,
+  //setListIndex: undefined,
+})
+
+module.exports = { rootObjectProxy, rootImmutableProxy, isImmutableProxy, ImmutableContext }
