@@ -153,7 +153,7 @@ function change(doc, message, callback) {
     if (!isImmutableProxy(result)) {
       throw new TypeError('you must return a document from the change block')
     }
-    if (result.objectId !== '00000000-0000-0000-0000-000000000000') {
+    if (result._objectId !== '00000000-0000-0000-0000-000000000000') {
       throw new TypeError('you must return the new document root from the change block')
     }
     return makeChange(doc, result.context.state, message)

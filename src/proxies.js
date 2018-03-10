@@ -235,25 +235,24 @@ function rootObjectProxy(context) {
 class immutableMapProxy {
   constructor(context, objectId) {
     this.context = context
-    this.objectId = objectId
     this._objectId = objectId
-    // TODO: figure out what to do about these objectId fields
   }
 
   isRoot() {
-    return (this.objectId === '00000000-0000-0000-0000-000000000000')
+    return (this._objectId === '00000000-0000-0000-0000-000000000000')
   }
 
   get(key) {
+    // TODO: do we really need all of these?
     //if (!context.state.hasIn(['opSet', 'byObject', objectId])) throw 'Target object does not exist: ' + objectId
     if (key === '_inspect') return 'inspecting an immutableMapProxy' // JSON.parse(JSON.stringify(mapProxy(context, objectId)))
     if (key === '_type') return 'map'
-    if (key === '_objectId') return this.objectId
+    if (key === '_objectId') return this._objectId
     if (key === '_state') return this.context.state
     if (key === '_actorId') return this.context.state.get('actorId')
-    if (key === '_conflicts') return OpSet.getObjectConflicts(this.context.state.get('opSet'), this.objectId, this.context).toJS()
+    if (key === '_conflicts') return OpSet.getObjectConflicts(this.context.state.get('opSet'), this._objectId, this.context).toJS()
     if (key === '_change') return this.context
-    return OpSet.getObjectField(this.context.state.get('opSet'), this.objectId, key, this.context)
+    return OpSet.getObjectField(this.context.state.get('opSet'), this._objectId, key, this.context)
   }
 
   set(key, value) {
@@ -264,9 +263,9 @@ class immutableMapProxy {
       throw new TypeError('Can only set or setIn from root doc')
     }
     const newContext = Object.assign({}, this.context, {
-      state: this.context.setField(this.context.state, this.objectId, key, value)
+      state: this.context.setField(this.context.state, this._objectId, key, value)
     })
-    return new immutableMapProxy(newContext, this.objectId)
+    return new immutableMapProxy(newContext, this._objectId)
   }
 
   setIn(keys, value) {
@@ -299,13 +298,13 @@ class immutableMapProxy {
     let newContext = this.context
     for (let i=keys.length-1; i>=0; i--) {
       newContext = Object.assign({}, newContext, {
-        state: newContext.setField(newContext.state, keyedObjects[i].objectId, keys[i], newValue)
+        state: newContext.setField(newContext.state, keyedObjects[i]._objectId, keys[i], newValue)
       })
       if (i !== 0) {
-        newValue = OpSet.getObjectField(newContext.state.get('opSet'), keyedObjects[i-1].objectId, keys[i-1], newContext)
+        newValue = OpSet.getObjectField(newContext.state.get('opSet'), keyedObjects[i-1]._objectId, keys[i-1], newContext)
       }
     }
-    return new immutableMapProxy(newContext, this.objectId)
+    return new immutableMapProxy(newContext, this._objectId)
   }
 
   delete(key) {
@@ -316,9 +315,9 @@ class immutableMapProxy {
       throw new TypeError('Can only delete or deleteIn from root doc')
     }
     const newContext = Object.assign({}, this.context, {
-      state: this.context.deleteField(this.context.state, this.objectId, key)
+      state: this.context.deleteField(this.context.state, this._objectId, key)
     })
-    return new immutableMapProxy(newContext, this.objectId)
+    return new immutableMapProxy(newContext, this._objectId)
   }
 }
 
