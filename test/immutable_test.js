@@ -351,6 +351,10 @@ describe('Immutable write interface', () => {
     assert.strictEqual(doc3.get('outer'), undefined)
   })
 
+  // TODO: _change and nesting
+  // TODO: mutable flag?
+  // TODO: Automerge.assign?
+
   // TODO: figure out implementation and testing of other read APIs like .keys() and .keySeq()
   // it('something something other methods', () => {
   // })

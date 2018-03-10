@@ -34,7 +34,6 @@ function change(doc, message, callback) {
   if (isImmutable(doc)) {
     const context = ImmutableContext({
       state: doc._state,
-      mutable: true
     })
     const result = callback(rootImmutableProxy(context))
     if (!isImmutableProxy(result)) {
