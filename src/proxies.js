@@ -296,6 +296,7 @@ class immutableMapProxy {
         return setField(s, keyedObjects[i]._objectId, keys[i], newValue)
       })
       if (i !== 0) {
+        // TODO: I think we should be able to avoid materializing here.
         newValue = OpSet.getObjectField(newContext.state.get('opSet'), keyedObjects[i-1]._objectId, keys[i-1], newContext)
       }
     }
