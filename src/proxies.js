@@ -282,8 +282,8 @@ class immutableMapProxy {
     }
     let keyedObjects = []
     keyedObjects[0] = this
-    for (let i=1; i<keys.length; keys++) {
-      keyedObjects[i] = keyedObjects[i-1].get(keys[i])
+    for (let i=1; i<keys.length; i++) {
+      keyedObjects[i] = keyedObjects[i-1].get(keys[i-1])
     }
     let newValue = value
     let newContext = this.context
@@ -292,7 +292,7 @@ class immutableMapProxy {
         state: newContext.setField(newContext.state, keyedObjects[i].objectId, keys[i], newValue)
       })
       if (i !== 0) {
-        newValue = OpSet.getObjectField(newContext.state.get('opSet'), keyedObjects[i].objectId, keys[i], newContext)
+        newValue = OpSet.getObjectField(newContext.state.get('opSet'), keyedObjects[i-1].objectId, keys[i-1], newContext)
       }
     }
     return new immutableMapProxy(newContext, this.objectId)
