@@ -1,6 +1,6 @@
 const { Map, Set, List, Record, fromJS } = require('immutable')
 const OpSet = require('./op_set')
-const { setField } = require ('./state')
+const { setField, deleteField } = require ('./state')
 
 function listImmutable(attempt) {
   throw new TypeError('You tried to ' + attempt + ', but this list is read-only. ' +
@@ -307,7 +307,7 @@ class immutableMapProxy {
       throw new TypeError('Must delete only from root doc')
     }
     const newContext = this.context.update('state', (s) => {
-      return this.context.deleteField(s, this._objectId, key)
+      return deleteField(s, this._objectId, key)
     })
     return new immutableMapProxy(newContext, this._objectId)
   }
@@ -331,7 +331,7 @@ class immutableMapProxy {
       return this
     }
     const newContext = this.context.update('state', (s) => {
-      return this.context.deleteField(s, keyedObj._objectId, innerKey)
+      return deleteField(s, keyedObj._objectId, innerKey)
     })
     return new immutableMapProxy(newContext, this._objectId)
   }
@@ -359,9 +359,6 @@ const ImmutableContext = Record({
   state: undefined,
   mutable: undefined,
   instantiateObject: undefined,
-  deleteField: undefined
-  //splice: undefined,
-  //setListIndex: undefined,
 })
 
 module.exports = { rootObjectProxy, rootImmutableProxy, isImmutableProxy, ImmutableContext }
