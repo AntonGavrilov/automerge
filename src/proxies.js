@@ -269,7 +269,6 @@ class immutableMapProxy {
     return new immutableMapProxy(newContext, this.objectId)
   }
 
-  // TODO: create empty maps, and test
   setIn(keys, value) {
     if (!this.context.mutable) {
       throw new TypeError('Not in change block!')
@@ -283,7 +282,18 @@ class immutableMapProxy {
     let keyedObjects = []
     keyedObjects[0] = this
     for (let i=1; i<keys.length; i++) {
-      keyedObjects[i] = keyedObjects[i-1].get(keys[i-1])
+      const keyedObject = keyedObjects[i-1].get(keys[i-1])
+      if (!keyedObject) {
+        const keysWithoutObjects = keys.slice(i)
+        const keysWithObjects = keys.slice(0, i)
+        let newValue = value
+        for (let j=keysWithoutObjects.length-1; j>=0; j--) {
+          newValue = new Map().set(keysWithoutObjects[j], newValue)
+        }
+        return this.setIn(keysWithObjects, newValue)
+      } else {
+        keyedObjects[i] = keyedObject
+      }
     }
     let newValue = value
     let newContext = this.context

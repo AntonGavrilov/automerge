@@ -168,6 +168,14 @@ describe('Immutable write interface', () => {
     assert.strictEqual(docTest, new Map())
   })
 
+  it('records writes of a populated map with .set', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      return doc.set('outer', new Map().set('inner', 'foo'))
+    })
+    assert.strictEqual(doc2.get('outer').get('inner'), 'foo')
+  })
+
 
   //// .setIn
 
