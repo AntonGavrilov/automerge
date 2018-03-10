@@ -50,7 +50,7 @@ describe('Automerge.initImmutable()', () => {
 
 describe('Immutable write interface', () => {
   // TODO: correct public API?
-  it('should have a fixed object ID at the root', () => {
+  it('has a fixed object ID at the root', () => {
     Automerge.change(Automerge.initImmutable(), doc => {
       assert.strictEqual(doc._objectId, ROOT_ID)
       return doc
@@ -58,7 +58,7 @@ describe('Immutable write interface', () => {
   })
 
   // TODO: do we actually need this within changes?
-  // it('should know its actor ID', () => {
+  // it('knows its actor ID', () => {
   //   Automerge.change(Automerge.initImmutable(), doc => {
   //     debugger
   //     assert(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(doc._actorId))
@@ -68,27 +68,29 @@ describe('Immutable write interface', () => {
   //   })
   // })
 
-  it('should accept a no-op block', () => {
+
+  //// change blocks
+
+  it('accepts a no-op block', () => {
     const doc1 = Automerge.initImmutable()
     const doc2 = Automerge.change(doc1, doc => doc)
   })
 
-  it('throws an error if you return nothing from a change block', () => {
+  it('throws if you return nothing from a change block', () => {
     const doc1 = Automerge.initImmutable()
     assert.throws(() => {
       const doc2 = Automerge.change(doc1, doc => {})
     }, /return a document from the change block/)
   })
 
-  it('throws an error if you return a scalar value a change block', () => {
+  it('throws if you return a scalar value a change block', () => {
     const doc1 = Automerge.initImmutable()
     assert.throws(() => {
       const doc2 = Automerge.change(doc1, doc => 42)
     }, /return a document from the change block/)
   })
 
-
-  it('throws an error if you return a mutable map from a change block', () => {
+  it('throws if you return a mutable map from a change block', () => {
     const doc1 = Automerge.initImmutable()
     assert.throws(() => {
       const doc2 = Automerge.change(doc1, doc => { return {foo: 'bar'} })
@@ -109,7 +111,7 @@ describe('Immutable write interface', () => {
     }, /return a document from the change block/)
   })
 
-  it('throws an error if you return a non-root object from a change block', () => {
+  it('throws if you return a non-root object from a change block', () => {
     const doc1 = Automerge.initImmutable()
     const doc2 = Automerge.change(doc1, doc => {
       return doc.set('outer', new Map())
@@ -119,6 +121,23 @@ describe('Immutable write interface', () => {
         return doc.get('outer')
       })
     }, /new document root from the change block/)
+  })
+
+
+  //// .set
+
+  it('throws when trying to .set on non-root doc', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      return doc.set('outer', new Map())
+    })
+    assert.throws(() => {
+      const doc3 = Automerge.change(doc2, doc => {
+        const newOuter = doc.get('outer').set('inner', 'foo')
+        doc = doc.set('outer', newOuter)
+        return doc
+      })
+    }, /only set or setIn from root doc/)
   })
 
   it('records writes with .set', () => {
@@ -149,7 +168,10 @@ describe('Immutable write interface', () => {
     assert.strictEqual(docTest, new Map())
   })
 
-  it('raises and error on .setIn with no keys', () => {
+
+  //// .setIn
+
+  it('throws on .setIn with no keys', () => {
     const doc1 = Automerge.initImmutable()
     assert.throws(() => {
       const doc2 = Automerge.change(doc1, doc => {
@@ -186,8 +208,6 @@ describe('Immutable write interface', () => {
     assert.strictEqual(doc2.get('outer').get('middle').get('inner'), 'bar')
   })
 
-  // TODO: can't .set or delete on non-root documents
-
   it('records overwrites with .set', () => {
     const doc1 = Automerge.initImmutable()
     const doc2 = Automerge.change(doc1, doc => {
@@ -196,6 +216,21 @@ describe('Immutable write interface', () => {
       return doc
     })
     assert.strictEqual(doc2.get('first'), 'bar')
+  })
+
+
+  //// .delete
+
+  it('throws when trying to .delete on non-root doc', () => {
+    const doc1 = Automerge.initImmutable()
+    const doc2 = Automerge.change(doc1, doc => {
+      return doc.set('outer', new Map())
+    })
+    assert.throws(() => {
+      const doc3 = Automerge.change(doc2, doc => {
+        return doc.get('outer').delete('inner')
+      })
+    }, /only delete or deleteIn from root doc/)
   })
 
   it('records deletes of values with .delete', () => {
@@ -224,6 +259,9 @@ describe('Immutable write interface', () => {
     })
     assert.strictEqual(doc3.get('outer'), undefined)
   })
+
+
+  //// history
 
   it('preserves history of value .sets and .deletes', () => {
     const doc1 = Automerge.initImmutable()

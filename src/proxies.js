@@ -302,6 +302,9 @@ class immutableMapProxy {
     if (!this.context.mutable) {
       throw new TypeError('Not in change block!')
     }
+    if (!this.isRoot()) {
+      throw new TypeError('Can only delete or deleteIn from root doc')
+    }
     const newContext = Object.assign({}, this.context, {
       state: this.context.deleteField(this.context.state, this.objectId, key)
     })
